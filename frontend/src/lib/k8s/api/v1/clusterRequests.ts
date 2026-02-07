@@ -20,7 +20,7 @@ import { addBackstageAuthHeaders } from '../../../../helpers/addBackstageAuthHea
 import { isDebugVerbose } from '../../../../helpers/debugVerbose';
 import { getAppUrl } from '../../../../helpers/getAppUrl';
 import { isBackstage } from '../../../../helpers/isBackstage';
-import store from '../../../../redux/stores/store';
+import { OIDCConfigError } from '../../OIDCConfigError';
 import { findKubeconfigByClusterName } from '../../../../stateless/findKubeconfigByClusterName';
 import { getUserIdFromLocalStorage } from '../../../../stateless/getUserIdFromLocalStorage';
 import { logout } from '../../../auth';
@@ -194,11 +194,21 @@ export async function clusterRequest(
       logout(cluster);
     }
 
+    // Check for OIDC configuration mismatch header from backend
+    const oidcMismatchHeader = response.headers.get('X-Headlamp-Error');
+    if (oidcMismatchHeader === 'OIDC_CONFIG_MISMATCH') {
+      const error = new OIDCConfigError(cluster);
+      // Dispatch event for UI to catch
+      window.dispatchEvent(new CustomEvent('oidc-config-error', { detail: error }));
+      throw error;
+    }
+
     let message = statusText;
+    let responseJson: any = null;
     try {
       if (isJSON) {
-        const json = await response.json();
-        message += ` - ${json.message}`;
+        responseJson = await response.json();
+        message += ` - ${responseJson.message}`;
       }
     } catch (err) {
       console.error(

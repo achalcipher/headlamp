@@ -1415,6 +1415,25 @@ func (c *HeadlampConfig) handleError(w http.ResponseWriter, ctx context.Context,
 	http.Error(w, err.Error(), status)
 }
 
+// captureResponseWriter wraps http.ResponseWriter to capture the HTTP status code
+// written via WriteHeader() without buffering the response body.
+// Used for OIDC mismatch detection in proxy requests.
+type captureResponseWriter struct {
+	http.ResponseWriter
+	statusCode int
+	hadBody    bool
+}
+
+func (w *captureResponseWriter) WriteHeader(code int) {
+	w.statusCode = code
+	w.ResponseWriter.WriteHeader(code)
+}
+
+func (w *captureResponseWriter) Write(b []byte) (int, error) {
+	w.hadBody = true
+	return w.ResponseWriter.Write(b)
+}
+
 func clusterRequestHandler(c *HeadlampConfig) http.Handler { //nolint:funlen
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
@@ -1484,12 +1503,23 @@ func clusterRequestHandler(c *HeadlampConfig) http.Handler { //nolint:funlen
 		processWebSocketProtocolHeader(r)
 		plugins.HandlePluginReload(c.Cache, w)
 
-		if err = kContext.ProxyRequest(w, r); err != nil {
+		// Wrap response writer to intercept and mark OIDC mismatch errors
+		wrappedWriter := &captureResponseWriter{
+			ResponseWriter: w,
+			statusCode:     http.StatusOK,
+		}
+
+		if err = kContext.ProxyRequest(wrappedWriter, r); err != nil {
 			c.TelemetryHandler.RecordErrorCount(ctx, attribute.String("error.type", "proxy_error"),
 				attribute.String("cluster", contextKey))
 			c.handleError(w, ctx, span, err, "failed to proxy request", http.StatusInternalServerError)
 
 			return
+		}
+
+		// If OIDC is configured and we got a 401, mark it so frontend can show a helpful message
+		if kContext.OidcConf != nil && (wrappedWriter.statusCode == http.StatusUnauthorized || wrappedWriter.statusCode == http.StatusForbidden) {
+			w.Header().Set("X-Headlamp-Error", "OIDC_CONFIG_MISMATCH")
 		}
 
 		if c.Telemetry != nil {
