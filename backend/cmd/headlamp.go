@@ -1518,7 +1518,8 @@ func clusterRequestHandler(c *HeadlampConfig) http.Handler { //nolint:funlen
 		}
 
 		// If OIDC is configured and we got a 401, mark it so frontend can show a helpful message
-		if kContext.OidcConf != nil && (wrappedWriter.statusCode == http.StatusUnauthorized || wrappedWriter.statusCode == http.StatusForbidden) {
+		if kContext.OidcConf != nil &&
+			(wrappedWriter.statusCode == http.StatusUnauthorized || wrappedWriter.statusCode == http.StatusForbidden) {
 			w.Header().Set("X-Headlamp-Error", "OIDC_CONFIG_MISMATCH")
 		}
 

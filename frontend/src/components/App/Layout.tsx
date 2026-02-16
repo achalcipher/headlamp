@@ -44,7 +44,7 @@ import { ErrorPage, Loader } from '../common';
 import ActionsNotifier from '../common/ActionsNotifier';
 import AlertNotification from '../common/AlertNotification';
 import DetailsDrawer from '../common/Resource/DetailsDrawer';
-import { OIDCConfigErrorAlert } from '../OIDCConfigErrorAlert';
+import { OIDCConfigErrorHandler } from '../OIDCConfigErrorAlert';
 import { OIDCMismatchAlertDisplay } from '../OIDCMismatchAlertDisplay';
 import Sidebar, { NavigationTabs } from '../Sidebar';
 import RouteSwitcher from './RouteSwitcher';
@@ -292,7 +292,7 @@ export default function Layout({}: LayoutProps) {
         {t('Skip to main content')}
       </Link>
       <OIDCMismatchAlertDisplay />
-      <OIDCConfigErrorAlert />
+      <OIDCConfigErrorHandler />
       <VersionDialog />
       <ShortcutsSettings />
       <CssBaseline enableColorScheme />

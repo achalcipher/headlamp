@@ -27,6 +27,7 @@ import configReducer from '../configSlice';
 import drawerModeSlice from '../drawerModeSlice';
 import filterReducer from '../filterSlice';
 import eventCallbackReducer from '../headlampEventSlice';
+import oidcMismatchReducer from '../oidcMismatchSlice';
 import overviewChartsReducer from '../overviewChartsSlice';
 import projectsReducer from '../projectsSlice';
 import routesReducer from '../routesSlice';
@@ -60,6 +61,7 @@ const reducers = combineReducers({
   activity: activityReducer,
   projects: projectsReducer,
   shortcuts: shortcutsReducer,
+  oidcMismatch: oidcMismatchReducer,
 });
 
 export type RootState = ReturnType<typeof reducers>;

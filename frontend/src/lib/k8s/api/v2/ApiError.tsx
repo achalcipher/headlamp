@@ -25,6 +25,8 @@ export class ApiError extends Error {
   public namespace?: string;
   /** Cluster name */
   public cluster?: string;
+  /** OIDC mismatch error details */
+  public oidcMismatch?: any;
 
   constructor(
     public message: string,
